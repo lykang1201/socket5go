@@ -1,0 +1,12 @@
+server:
+  control_addr: "localhost:8000"
+  tunnel_addr: "localhost:8066"
+
+client:
+  id: "my_client_001"
+
+forwards:
+  - name: "local_service"
+    path: "/"
+    local_addr: "192.168.3.25:11434"
+    description: "本地服务"
