@@ -1,5 +1,23 @@
-server_url: http://xxxx.xxxx.xxxx.xxxx:9083
-client_url: http://192.168.3.25:11434
+# 客户端配置文件示例
+# 复制此文件为 clientConfig.yaml 并填写实际配置
+
+# 服务端 SOCKS5 连接地址，格式: http://IP:端口
+# 端口对应服务端配置中的 socks_port
+server_url: http://your-server-ip:9083
+
+# 本地目标服务地址，格式: http://IP:端口
+# 所有通过隧道转发的请求都会发送到这个地址
+client_url: http://127.0.0.1:11434
+
+# 客户端唯一标识，用于在服务端区分不同客户端
+# 建议使用有意义的名称，如: local-llm-01, office-api-02
 client_id: local-llm-01
+
+# 路由前缀，服务端会将所有以该前缀开头的请求转发到此客户端
+# 例如配置为 /ollama，则 http://server:9082/ollama/* 都会转发
 route_prefix: /ollama
-auth_key: "sdaUS23218H8SDA71@$##SUA77"
+
+# 认证密钥，必须与服务端配置中的 auth_key 保持一致
+# 用于防止未授权客户端连接，建议使用强随机字符串
+# 推荐生成方式: openssl rand -hex 16
+auth_key: "your-secret-key-here"
