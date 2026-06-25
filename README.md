@@ -317,14 +317,20 @@ curl http://your-server:9082/api/client/status?clientId=local-llm-01
 ## 文件结构
 
 ```
-rfrp/
-├── main_server.go          # 服务端代码
-├── main_client.go          # 客户端代码
-├── serverConfig.yaml       # 服务端配置（运行时）
+socket5go/
+├── cmd/
+│   ├── server/
+│   │   └── main_server.go    # 服务端代码
+│   └── client/
+│       └── main_client.go    # 客户端代码
+├── serverConfig.yaml         # 服务端配置（运行时）
 ├── serverConfig.yaml.example # 服务端配置示例
-├── clientConfig.yaml       # 客户端配置（运行时）
+├── clientConfig.yaml         # 客户端配置（运行时）
 ├── clientConfig.yaml.example # 客户端配置示例
-├── build.bat               # Windows 编译脚本
-├── .gitignore              # Git 忽略文件
-└── README.md               # 项目文档
+├── build.bat                 # Windows 编译脚本
+├── go.mod                    # Go 模块依赖
+├── go.sum                    # Go 模块校验
+├── LICENSE                   # MIT 许可证
+├── .gitignore               # Git 忽略文件
+└── README.md                # 项目文档
 ```
