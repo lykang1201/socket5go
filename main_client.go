@@ -28,6 +28,7 @@ var ServerPort string
 var ClientURL string
 var ClientID string
 var RoutePrefix string
+var AuthKey string
 
 type ProxyTask struct {
 	ReqId  string              `json:"reqId"`
@@ -147,13 +148,16 @@ func connectAndRegister() (net.Conn, error) {
 
 	idLen := len(ClientID)
 	prefixLen := len(RoutePrefix)
-	req := make([]byte, 3+idLen+1+prefixLen)
+	authKeyLen := len(AuthKey)
+	req := make([]byte, 3+idLen+1+prefixLen+1+authKeyLen)
 	req[0] = SOCKS5Version
 	req[1] = CmdRegister
 	req[2] = byte(idLen)
 	copy(req[3:3+idLen], ClientID)
 	req[3+idLen] = byte(prefixLen)
-	copy(req[3+idLen+1:], RoutePrefix)
+	copy(req[3+idLen+1:3+idLen+1+prefixLen], RoutePrefix)
+	req[3+idLen+1+prefixLen] = byte(authKeyLen)
+	copy(req[3+idLen+1+prefixLen+1:], AuthKey)
 
 	conn.Write(req)
 
@@ -164,6 +168,9 @@ func connectAndRegister() (net.Conn, error) {
 	}
 	if buf[1] != 0x00 {
 		conn.Close()
+		if buf[1] == 0x01 {
+			return nil, fmt.Errorf("认证失败：密钥不匹配")
+		}
 		return nil, fmt.Errorf("注册失败")
 	}
 
@@ -202,6 +209,7 @@ type Config struct {
 	ClientURL   string `yaml:"client_url"`
 	ClientID    string `yaml:"client_id"`
 	RoutePrefix string `yaml:"route_prefix"`
+	AuthKey     string `yaml:"auth_key"`
 }
 
 func loadConfig() bool {
@@ -242,6 +250,10 @@ func loadConfig() bool {
 	}
 	if !strings.HasPrefix(RoutePrefix, "/") {
 		RoutePrefix = "/" + RoutePrefix
+	}
+	AuthKey = config.AuthKey
+	if AuthKey == "" {
+		fmt.Println("警告: 未配置认证密钥，建议设置 auth_key 以提高安全性")
 	}
 	return true
 }

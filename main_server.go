@@ -41,6 +41,7 @@ var (
 	routeClientMap sync.Map
 	reqPool        sync.Map
 	hbTimeout      = 120 * time.Second
+	authKey        string
 )
 
 type ProxyTask struct {
@@ -145,12 +146,26 @@ func handleClient(conn net.Conn) {
 	clientId := string(buf[3 : 3+clientIdLen])
 
 	routePrefixLen := int(buf[3+clientIdLen])
-	routePrefix := "/llm"
-	if routePrefixLen > 0 && 3+clientIdLen+routePrefixLen <= n {
-		routePrefix = string(buf[3+clientIdLen+1 : 3+clientIdLen+1+routePrefixLen])
+	if routePrefixLen == 0 || 3+clientIdLen+routePrefixLen > n {
+		fmt.Println("路由前缀长度无效")
+		return
 	}
+	routePrefix := string(buf[3+clientIdLen+1 : 3+clientIdLen+1+routePrefixLen])
 	if !strings.HasPrefix(routePrefix, "/") {
 		routePrefix = "/" + routePrefix
+	}
+
+	authKeyLen := int(buf[3+clientIdLen+1+routePrefixLen])
+	if authKeyLen == 0 || 3+clientIdLen+1+routePrefixLen+authKeyLen > n {
+		fmt.Println("密钥长度无效")
+		return
+	}
+	clientAuthKey := string(buf[3+clientIdLen+1+routePrefixLen+1 : 3+clientIdLen+1+routePrefixLen+1+authKeyLen])
+
+	if clientAuthKey != authKey {
+		fmt.Printf("[认证失败] 客户端 %s 密钥不匹配\n", clientId)
+		conn.Write([]byte{SOCKS5Version, 0x01, 0x00, SOCKS5AddrIPv4, 0, 0, 0, 0, 0, 0})
+		return
 	}
 
 	ctx := make(chan struct{})
@@ -164,7 +179,7 @@ func handleClient(conn net.Conn) {
 
 	routeClientMap.Store(routePrefix, cli)
 	clientMap.Store(clientId, cli)
-	fmt.Printf("[注册] 客户端 %s 路由前缀 %s\n", clientId, routePrefix)
+	fmt.Printf("[注册成功] 客户端 %s 路由前缀 %s\n", clientId, routePrefix)
 
 	conn.Write([]byte{SOCKS5Version, 0x00, 0x00, SOCKS5AddrIPv4, 0, 0, 0, 0, 0, 0})
 
@@ -316,6 +331,7 @@ var SocksPort string
 type serverConfig struct {
 	ServerPort string `yaml:"server_port"`
 	SocksPort  string `yaml:"socks_port"`
+	AuthKey    string `yaml:"auth_key"`
 }
 
 func loadServerConfig() {
@@ -325,16 +341,22 @@ func loadServerConfig() {
 		fmt.Printf("加载配置失败: %v\n", err)
 		ServerPort = "9082"
 		SocksPort = "9083"
+		authKey = ""
 		return
 	}
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		fmt.Printf("解析配置失败: %v\n", err)
 		ServerPort = "9082"
 		SocksPort = "9083"
+		authKey = ""
 		return
 	}
 	ServerPort = config.ServerPort
 	SocksPort = config.SocksPort
+	authKey = config.AuthKey
+	if authKey == "" {
+		fmt.Println("警告: 未配置认证密钥，建议设置 auth_key 以提高安全性")
+	}
 }
 
 func main() {

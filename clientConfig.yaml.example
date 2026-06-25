@@ -1,4 +1,4 @@
-server_url: http://123.207.20.105:9083
+server_url: http://xxxx.xxxx.xxxx.xxxx:9083
 client_url: http://192.168.3.25:11434
 client_id: local-llm-01
 route_prefix: /ollama
