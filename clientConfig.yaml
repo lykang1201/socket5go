@@ -2,4 +2,4 @@ server_url: http://123.207.20.105:9083
 client_url: http://192.168.3.25:11434
 client_id: local-llm-01
 route_prefix: /ollama
-auth_key: "sdaUS23218H8SDA71@$##SUA77"
+auth_key: ""
